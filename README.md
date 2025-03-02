@@ -24,6 +24,14 @@ The goal of this project is to demonstrate how to use JavaCC to create a compile
 
 ---
 
+## Project Timeline
+
+- **19/12/2024**: Project created. Initial commit includes the following files:
+  - `JavaGrammar.jj`: The main grammar file for the compiler.
+  - `Simple.java`: A test file to validate the compiler's functionality.
+
+---
+
 ## Prerequisites
 
 Before running the project, ensure you have the following installed:
@@ -108,8 +116,8 @@ This project is open-source and available under the [MIT License](LICENSE).
 ## Contact
 
 For any questions or feedback, please contact:
-- **Your Name**: [Your Email Address]
-- **GitHub**: [Your GitHub Profile Link]
+- **Your Name**: [abdelrahmanhelwaitsme@gmail.com]
+- **GitHub**: [https://github.com/MrHelwa]
 
 ---
 
