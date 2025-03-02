@@ -1,0 +1,230 @@
+options {
+    LOOKAHEAD = 3;  // Increased LOOKAHEAD
+    STATIC = false;
+    UNICODE_INPUT = true;
+}
+
+PARSER_BEGIN(JavaGrammar)
+import java.io.*;
+import java.util.*;
+
+public class JavaGrammar {
+    private static Map<String, List<String>> symbolTable = new HashMap<>();
+
+    public static void main(String[] args) throws ParseException, FileNotFoundException {
+        try {
+            if (args.length > 0) {
+                FileInputStream fis = new FileInputStream(args[0]);
+                JavaGrammar parser = new JavaGrammar(fis);
+                parser.CompilationUnit();
+                System.out.println("Syntax validation successful!");
+                System.out.println("\nSymbol Table:");
+                for (Map.Entry<String, List<String>> entry : symbolTable.entrySet()) {
+                    System.out.println(entry.getKey() + ": " + entry.getValue());
+                }
+            } else {
+                System.out.println("Please provide a Java source file as an argument.");
+            }
+        } catch (ParseException e) {
+            System.err.println("Syntax Error: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    private static void addToSymbolTable(String type, String identifier) {
+        if (!symbolTable.containsKey(type)) {
+            symbolTable.put(type, new ArrayList<>());
+        }
+        symbolTable.get(type).add(identifier);
+    }
+}
+PARSER_END(JavaGrammar)
+
+SKIP : {
+    " " | "\t" | "\r" | "\n" | "\f"
+    | <SINGLE_LINE_COMMENT: "//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+    | <MULTI_LINE_COMMENT: "/*" (~["*"])* "*" ("*" | (~["*","/"] (~["*"])*)* "*")* "/">
+}
+
+TOKEN : {
+    < CLASS: "class" >
+    | < PUBLIC: "public" >
+    | < PRIVATE: "private" >
+    | < PROTECTED: "protected" >
+    | < STATIC: "static" >
+    | < FINAL: "final" >
+    | < VOID: "void" >
+    | < INT: "int" >
+    | < STRING: "String" >
+    | < BOOLEAN: "boolean" >
+    | < IF: "if" >
+    | < ELSE: "else" >
+    | < WHILE: "while" >
+    | < FOR: "for" >
+    | < RETURN: "return" >
+    | < TRUE: "true" >
+    | < FALSE: "false" >
+    | < NEW: "new" >
+    | < INTEGER_LITERAL: (["0"-"9"])+ >
+    | < STRING_LITERAL: "\"" (~["\""])* "\"" >
+    | < BOOLEAN_LITERAL: "true" | "false" >
+    | < IDENTIFIER: (["a"-"z","A"-"Z","_","$"]) (["a"-"z","A"-"Z","0"-"9","_","$"])* >
+    | < ASSIGNMENT: "=" >
+    | < COMPARISON: "==" | "!=" | "<" | ">" | "<=" | ">=" >
+    | < ARITHMETIC_OP: "+" | "-" | "*" | "/" | "%" >
+    | < LOGICAL_OP: "&&" | "||" | "!" >
+    | < SEMICOLON: ";" >
+    | < COMMA: "," >
+    | < DOT: "." >
+    | < LPAREN: "(" >
+    | < RPAREN: ")" >
+    | < LBRACE: "{" >
+    | < RBRACE: "}" >
+    | < LBRACKET: "[" >
+    | < RBRACKET: "]" >
+}
+
+void CompilationUnit() : {} {
+    ClassDeclaration() <EOF>
+}
+
+void ClassDeclaration() : {Token className;} {
+    < CLASS > className = < IDENTIFIER >
+    {
+        addToSymbolTable("Class", className.image);
+    }
+    < LBRACE >
+        ( ClassBodyDeclaration() )*
+    < RBRACE >
+}
+
+void ClassBodyDeclaration() : {} {
+    LOOKAHEAD(3)
+    FieldDeclaration()
+    | MethodDeclaration()
+}
+
+void FieldDeclaration() : {Token varName;} {
+    [< PUBLIC > | < PRIVATE > | < PROTECTED >]
+    [< STATIC >]
+    (< INT > | < STRING > | < BOOLEAN >)
+    varName = < IDENTIFIER >
+    (< ASSIGNMENT > Expression())?
+    < SEMICOLON >
+    {
+        addToSymbolTable("Field", varName.image);
+    }
+}
+
+void MethodDeclaration() : {Token methodName;} {
+    [< PUBLIC > | < PRIVATE > | < PROTECTED >]
+    [< STATIC >]
+    (< VOID > | < INT > | < STRING > | < BOOLEAN >)
+    methodName = < IDENTIFIER >
+    {
+        addToSymbolTable("Method", methodName.image);
+    }
+    < LPAREN > ParameterList() < RPAREN >
+    Block()
+}
+
+void ParameterList() : {} {
+    (
+        Parameter()
+        ( < COMMA > Parameter() )*
+    )?
+}
+
+void Parameter() : {Token paramName;} {
+    (< INT > | < STRING > | < BOOLEAN >)
+    paramName = < IDENTIFIER >
+    {
+        addToSymbolTable("Parameter", paramName.image);
+    }
+}
+
+void Block() : {} {
+    < LBRACE >
+        ( BlockStatement() )*
+    < RBRACE >
+}
+
+void BlockStatement() : {} {
+    LOOKAHEAD(3)
+    VariableDeclaration()
+    | Statement()
+}
+
+void Statement() : {} {
+    Assignment()
+    | IfStatement()
+    | WhileStatement()
+    | ReturnStatement()
+    | Block()
+}
+
+void VariableDeclaration() : {Token varName;} {
+    (< INT > | < STRING > | < BOOLEAN >)
+    varName = < IDENTIFIER >
+    (< ASSIGNMENT > Expression())?
+    < SEMICOLON >
+    {
+        addToSymbolTable("LocalVariable", varName.image);
+    }
+}
+
+void Assignment() : {Token varName;} {
+    varName = < IDENTIFIER >
+    < ASSIGNMENT >
+    Expression()
+    < SEMICOLON >
+    {
+        addToSymbolTable("AssignedVariable", varName.image);
+    }
+}
+
+void IfStatement() : {} {
+    < IF >
+    < LPAREN > Expression() < RPAREN >
+    Statement()
+    [LOOKAHEAD(1) < ELSE > Statement()]
+}
+
+void WhileStatement() : {} {
+    < WHILE >
+    < LPAREN > Expression() < RPAREN >
+    Statement()
+}
+
+void ReturnStatement() : {} {
+    < RETURN >
+    [Expression()]
+    < SEMICOLON >
+}
+
+void Expression() : {} {
+    LogicalExpression()
+}
+
+void LogicalExpression() : {} {
+    ComparisonExpression()
+    (< LOGICAL_OP > ComparisonExpression())*
+}
+
+void ComparisonExpression() : {} {
+    ArithmeticExpression()
+    [< COMPARISON > ArithmeticExpression()]
+}
+
+void ArithmeticExpression() : {} {
+    Term()
+    (< ARITHMETIC_OP > Term())*
+}
+
+void Term() : {} {
+    < INTEGER_LITERAL >
+    | < STRING_LITERAL >
+    | < BOOLEAN_LITERAL >
+    | < IDENTIFIER >
+    | < LPAREN > Expression() < RPAREN >
+}
