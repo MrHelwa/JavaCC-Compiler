@@ -17,10 +17,16 @@ This project is a simple compiler built using JavaCC (Java Compiler Compiler). I
 ## Project Overview
 
 The project consists of the following files:
-- **`JavaGrammar.jj`**: The JavaCC grammar file that defines the syntax and rules for the compiler.
-- **`Simple.java`**: A simple Java file used to test the compiler.
+- **` JavaGrammar.jj`**: The JavaCC grammar file that defines the syntax and rules for the compiler.
 
-The goal of this project is to demonstrate how to use JavaCC to create a compiler and test it with a sample Java file.
+This project involves creating a compiler module using JavaCC to implement lexical analysis and parser grammar for the 
+Java programming language. The module will do the following: 
+1. Perform lexical analysis by breaking the source code into tokens. 
+2. Parse the tokenized input to validate the syntax according to Java grammar. 
+3. Take the Java source code from the text file as input. 
+4. Output either syntax validation results or error reports for invalid code.
+ 
+- **`Simple.java`**: A simple Java file used to test the compiler.
 
 ---
 
@@ -85,6 +91,7 @@ Follow these steps to run the project:
      ```bash
      java JavaGrammar Simple.java
      ```
+When you run the command for the first time, this message will appear: "Syntax validation successful!" try removing a ; or data type of a variable and see the result in your terminal by yourself.
 
 ---
 
